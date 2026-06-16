@@ -81,14 +81,6 @@ function getAccessToken() {
   return service.getAccessToken();
 }
 
-/**
- * Log the redirect URI used in the TickTick developer console.
- */
-function printRedirectUri() {
-  Logger.log('Redirect URI voor TickTick developer console:');
-  Logger.log(OAuth2.getRedirectUri());
-}
-
 // ─── OAuth2 helpers ────────────────────────────────────────────────────────────
 
 function getClientId() {
