@@ -1,0 +1,7 @@
+# Ignore everything by default
+**/**
+
+# Whitelist only Apps Script files
+!appsscript.json
+!**/*.gs 
+!**/*.js 
