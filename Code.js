@@ -105,8 +105,7 @@ function getCredentials() {
   const clientId = getClientId()
   const clientSecret = getClientSecret()
 
-  
-  return credentials = Utilities.base64Encode(
+  return Utilities.base64Encode(
     `${clientId}:${clientSecret}`
   );
 }
@@ -211,19 +210,14 @@ function buildConfigCard(message) {
  * @returns {ActionResponse}
  */
 function createTickTickTask(e) {
+  const projectId = getScriptProperty(PROP_KEY_PROJECT); // When null, defaults to 'inbox'.
   const subject   = e.parameters.subject;
   const sender    = e.parameters.sender;
 
   const accessToken = getAccessToken()
   if (!accessToken) {
-    return notifyUser('⚠️ TickTick access token not set.');
+    return notifyUser('⚠️ You are not logged in to TickTick. Please login and try again.');
   }
-
-  const projectId = getScriptProperty(PROP_KEY_PROJECT); 
-  /* getScriptProperty(PROP_KEY_PROJECT)
-  if (!projectId) {
-    return notifyUser('⚠️ TickTick project id not set.');
-  }*/
 
   // Build the TickTick task payload
   const task = {
@@ -240,7 +234,7 @@ function createTickTickTask(e) {
         'Authorization': `Bearer ${accessToken}`,
         'Content-Type':  'application/json'
       },
-      payload:         JSON.stringify(task),
+      payload: JSON.stringify(task),
       muteHttpExceptions: true
     });
 
