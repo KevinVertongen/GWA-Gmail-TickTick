@@ -3,7 +3,7 @@
  * Print the access token.
 */
 function checkConnection() {
-  const service = getTickTickService();
+  const service = getTickTickService_();
   Logger.log('Has access: ' + service.hasAccess());
   Logger.log('Access token: ' + service.getAccessToken());
 }

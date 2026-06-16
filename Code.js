@@ -14,18 +14,21 @@ const PROP_KEY_CLIENT_SECRET = 'TICKTICK_CLIENT_SECRET';
  * Configure and return the OAuth2 service.
  * The library manages tokens, refresh and callback.
  */
-function getTickTickService() {
+function getTickTickService_() {
   return OAuth2.createService('TickTick')
     .setAuthorizationBaseUrl(TICKTICK_AUTH_URL)
     .setTokenUrl(TICKTICK_TOKEN_URL)
     .setClientId(getClientId())
     .setClientSecret(getClientSecret())
     .setCallbackFunction('authCallback')
-    .setPropertyStore(PropertiesService.getScriptProperties())
     .setScope('tasks:read tasks:write')
     .setTokenHeaders({
       'Authorization': 'Basic ' + getCredentials()
-    });
+    })
+    .setPropertyStore(PropertiesService.getUserProperties())
+    .setCache(CacheService.getUserCache())
+    .setLock(LockService.getUserLock())
+    .setParam('login_hint', Session.getEffectiveUser().getEmail());
 }
 
 /**
@@ -33,7 +36,7 @@ function getTickTickService() {
  * It will redirect you to TickTick's login + consent screen.
  */
 function startTickTickOAuth() {
-  const service = getTickTickService();
+  const service = getTickTickService_();
 
   if (service.hasAccess()) {
     Logger.log('✅ Already authorized with TickTick.');
@@ -49,7 +52,7 @@ function startTickTickOAuth() {
  * It exchanges the authorization code for an access + refresh token.
  */
 function authCallback(request) {
-  const service      = getTickTickService();
+  const service      = getTickTickService_();
   const isAuthorized = service.handleCallback(request);
 
   if (isAuthorized) {
@@ -68,7 +71,7 @@ function authCallback(request) {
  * Returns a valid access token, refreshing it first if it's expired.
  */
 function getAccessToken() {
-  const service = getTickTickService();
+  const service = getTickTickService_();
 
   if (!service.hasAccess()) {
     Logger.log('⚠️ Not connected — execute startTickTickOAuth() before continuing.');
@@ -89,13 +92,13 @@ function printRedirectUri() {
 // ─── OAuth2 helpers ────────────────────────────────────────────────────────────
 
 function getClientId() {
-  const clientId = getScriptProperty(PROP_KEY_CLIENT_ID);
+  const clientId = getUserProperty(PROP_KEY_CLIENT_ID);
   if (!clientId) Logger.log('⚠️ TickTick client ID not set.');
   return clientId
 }
 
 function getClientSecret() {
-  const clientSecret = getScriptProperty(PROP_KEY_CLIENT_SECRET);
+  const clientSecret = getUserProperty(PROP_KEY_CLIENT_SECRET);
   if (!clientSecret) Logger.log('⚠️ TickTick client secret not set.');
   return clientSecret
 }
@@ -210,7 +213,7 @@ function buildConfigCard(message) {
  * @returns {ActionResponse}
  */
 function createTickTickTask(e) {
-  const projectId = getScriptProperty(PROP_KEY_PROJECT); // When null, defaults to 'inbox'.
+  const projectId = getUserProperty(PROP_KEY_PROJECT); // When null, defaults to 'inbox'.
   const subject   = e.parameters.subject;
   const sender    = e.parameters.sender;
 
@@ -263,6 +266,6 @@ function notifyUser(message) {
     .build();
 }
 
-function getScriptProperty(key) {
-  return PropertiesService.getScriptProperties().getProperty(key);
+function getUserProperty(key) {
+  return PropertiesService.getUserProperties().getProperty(key);
 }
