@@ -1,15 +1,8 @@
 # Ignore all files by default
 **/**
 
-# Except extensions of Apps Script files
+# Except specific Apps Script files
 !appsscript.json
-!**/*.gs
-!**/*.js
-!**/*.ts
-!**/*.html
-
-# Ignore these directories
-**/node_modules/**
-**/.git/**
-**/.husky/**
-**/.idea/**
+!Code.js
+!Setup.js
+!Tests.js

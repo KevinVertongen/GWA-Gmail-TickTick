@@ -13,6 +13,7 @@
   "author": "Kevin Vertongen",
   "license": "MIT",
   "devDependencies": {
+    "@google/clasp": "2.5.0",
     "husky": "^9.1.7"
   }
 }
