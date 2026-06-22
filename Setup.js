@@ -5,6 +5,7 @@ function setUserProperties() {
   const userProperties = PropertiesService.getUserProperties();
   userProperties.setProperty('TICKTICK_CLIENT_ID',     'your-client-id-here');
   userProperties.setProperty('TICKTICK_CLIENT_SECRET', 'your-client-secret-here');
+  userProperties.setProperty('TICKTICK_PROJECT_ID',    'your-default-project-id-here');
   Logger.log('✅ TickTick client id and secret set.');
 }
 
