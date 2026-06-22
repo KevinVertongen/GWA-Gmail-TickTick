@@ -43,6 +43,8 @@ clasp clone <YOUR_SCRIPT_ID>
 Husky is configured to run `clasp push` automatically before every `git push`, keeping GitHub and Apps Script in sync.
 It is installed as a dev dependency and requires no manual setup after `npm install`.
 
+> Consult the README.md in the .husky folder if you experience problems with the Git hooks.
+
 ```bash
 npm install   # installs husky and wires up the hook
 ```
