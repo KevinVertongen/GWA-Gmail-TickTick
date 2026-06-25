@@ -131,7 +131,7 @@ function onGmailMessageOpen(e) {
   const sender  = message.getFrom();
   const emailDate    = message.getDate();
   const timeZone = e.commonEventObject.timeZone;  // The user's timezone ID and offset
-  const messageUrl = `https://mail.google.com/mail/u/0/#all/${messageId}`;
+  const messageUrl = message.getThread().getPermalink();
   const bodyPlain  = message.getPlainBody().substring(0, 1000).trim();
 
   return buildTaskCard(messageId, subject, sender, emailDate, timeZone, messageUrl, bodyPlain);
@@ -145,7 +145,7 @@ function onGmailMessageOpen(e) {
 function buildTaskCard(messageId, subject, sender, emailDate, timeZone, messageUrl, bodyPlain) {
   const defaultContent =
       `From: ${sender}\n` +
-      `Link: ${messageUrl}\n\n` +
+      `Link: ${messageUrl}\n` +
       `---\n${bodyPlain}`;
 
   // ── Editable fields ───────────────────────────────────────────
