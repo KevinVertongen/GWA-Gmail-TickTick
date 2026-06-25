@@ -129,7 +129,7 @@ function onGmailMessageOpen(e) {
   const message = GmailApp.getMessageById(messageId);
   const subject = message.getSubject() || '(no subject)';
   const sender  = message.getFrom();
-  const date    = message.getDate().toLocaleDateString();
+  const date    = message.getDate();
   const bodyPlain  = message.getPlainBody().substring(0, 1000).trim();
   const messageUrl = `https://mail.google.com/mail/u/0/#all/${messageId}`;
 
