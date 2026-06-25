@@ -2,8 +2,8 @@
  * Fill-out user defaults: project id and reminder; in the user properties store.
  */
 function setUserProperties() {
-  userProperties.setProperty('TICKTICK_PROJECT_ID',       'your-default-project-id-here');
-  userProperties.setProperty('TICKTICK_DEFAULT_REMINDER', 'your-default-iCal-reminder-here');
+  userProperties.setProperty(PROP_KEY_PROJECT,  'your-default-project-id-here');
+  userProperties.setProperty(PROP_KEY_REMINDER, 'your-default-iCal-reminder-here');
   Logger.log('✅ TickTick user properties set.');
 }
 /**
@@ -11,8 +11,8 @@ function setUserProperties() {
  */
 function setOAuthProperties() {
   const userProperties = PropertiesService.getUserProperties();
-  userProperties.setProperty('TICKTICK_CLIENT_ID',     'your-client-id-here');
-  userProperties.setProperty('TICKTICK_CLIENT_SECRET', 'your-client-secret-here');
+  userProperties.setProperty(PROP_KEY_CLIENT_ID,     'your-client-id-here');
+  userProperties.setProperty(PROP_KEY_CLIENT_SECRET, 'your-client-secret-here');
   Logger.log('✅ TickTick client id and secret set.');
 }
 

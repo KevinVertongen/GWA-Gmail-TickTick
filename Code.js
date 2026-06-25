@@ -1,12 +1,18 @@
 // ─── Constants ────────────────────────────────────────────────────────────────
 
-const TICKTICK_API_BASE      = 'https://ticktick.com/open/v1';
-const TICKTICK_AUTH_URL      = 'https://ticktick.com/oauth/authorize';
-const TICKTICK_TOKEN_URL     = 'https://ticktick.com/oauth/token';
+const TICKTICK_API_BASE       = 'https://ticktick.com/open/v1';
+const TICKTICK_AUTH_URL       = 'https://ticktick.com/oauth/authorize';
+const TICKTICK_TOKEN_URL      = 'https://ticktick.com/oauth/token';
+const TICKTICK_TASK_URL       = 'https://ticktick.com/webapp/#p/inbox/tasks';
 
-const PROP_KEY_PROJECT       = 'TICKTICK_PROJECT_ID';
-const PROP_KEY_CLIENT_ID     = 'TICKTICK_CLIENT_ID';
-const PROP_KEY_CLIENT_SECRET = 'TICKTICK_CLIENT_SECRET';
+const PROP_KEY_CLIENT_ID      = 'TICKTICK_CLIENT_ID';
+const PROP_KEY_CLIENT_SECRET  = 'TICKTICK_CLIENT_SECRET';
+const PROP_KEY_PROJECT        = 'TICKTICK_PROJECT_ID';
+const PROP_KEY_REMINDER       = 'TICKTICK_DEFAULT_REMINDER';
+const PROP_PREFIX_TASK        = 'task_';
+
+const GWA_CARD_TITLE          = 'Send to TickTick';
+const GWA_CARD_ICON           = 'https://www.gstatic.com/images/icons/material/system/1x/check_circle_black_48dp.png';
 
 // ─── OAuth2 Flow ────────────────────────────────────────────────────────────
 
@@ -111,7 +117,7 @@ function getCredentials() {
  * Renders a fallback homepage card when no email is open.
  */
 function onHomepage() {
-  return buildConfigCard('Open an email to create a TickTick task from it.');
+  return buildConfigCard('No message selected', 'Open an email to create a TickTick task from it.');
 }
 
 /**
@@ -219,11 +225,10 @@ function buildTaskCard(messageId, subject, sender, emailDate, timeZone, messageU
       );
 
   return CardService.newCardBuilder()
-      .setHeader(
-          CardService.newCardHeader()
-              .setTitle('Send to TickTick')
+      .setHeader(CardService.newCardHeader()
+              .setTitle(GWA_CARD_TITLE)
               .setSubtitle('Create a task from this email')
-              .setImageUrl('https://www.gstatic.com/images/icons/material/system/1x/check_circle_black_48dp.png')
+              .setImageUrl(GWA_CARD_ICON)
       )
       .addSection(inputSection)
       .addSection(actionSection)
@@ -233,9 +238,13 @@ function buildTaskCard(messageId, subject, sender, emailDate, timeZone, messageU
 /**
  * Fallback / config card.
  */
-function buildConfigCard(message) {
+function buildConfigCard(subtitle, message) {
   return CardService.newCardBuilder()
-    .setHeader(CardService.newCardHeader().setTitle('Send to TickTick'))
+    .setHeader(CardService.newCardHeader()
+        .setTitle(GWA_CARD_TITLE)
+        .setSubtitle(subtitle)
+        .setImageUrl(GWA_CARD_ICON)
+    )
     .addSection(
       CardService.newCardSection()
         .addWidget(CardService.newTextParagraph().setText(message))
@@ -274,7 +283,7 @@ function createTickTickTask(e) {
       ? formatDueDate(dueDateMs, parseInt(timezoneOffset, 10)) // a full ISO 8601 timestamp
       : null;
 
-  const defaultReminder = getUserProperty('TICKTICK_DEFAULT_REMINDER') || 'TRIGGER:P0DT9H0M0S'; // On the day (9:00)
+  const defaultReminder = getUserProperty(PROP_KEY_REMINDER) || 'TRIGGER:P0DT9H0M0S'; // On the day (9:00)
 
   const task = {
     title:    title,
