@@ -1,4 +1,6 @@
-
+/**
+ * Fill-out user defaults: project id and reminder; in the user properties store.
+ */
 function setUserProperties() {
   userProperties.setProperty('TICKTICK_PROJECT_ID',       'your-default-project-id-here');
   userProperties.setProperty('TICKTICK_DEFAULT_REMINDER', 'your-default-iCal-reminder-here');
