@@ -274,12 +274,15 @@ function createTickTickTask(e) {
       ? formatDueDate(dueDateMs, parseInt(timezoneOffset, 10)) // a full ISO 8601 timestamp
       : null;
 
+  const defaultReminder = getUserProperty('TICKTICK_DEFAULT_REMINDER') || 'TRIGGER:P0DT9H0M0S'; // On the day (9:00)
+
   const task = {
     title:    title,
     content:  content,
     priority: priority,
     isAllDay: true,
-    timeZone: timeZoneId
+    timeZone: timeZoneId,
+    reminders: [defaultReminder]
   };
 
   if (projectId) task.projectId = projectId;

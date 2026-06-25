@@ -51,11 +51,27 @@ npm install   # installs husky and wires up the hook
 
 ## Configuration
 
+### Preferences
+
+Set your default project id and default reminder in your Google **User Properties**.
+Set them by updating the `Setup.js` script and running this function once from the Apps Script editor:
+
+```javascript
+setUserProperties()
+```
+
+| Property                   | Description                                                                                                         |
+|----------------------------|---------------------------------------------------------------------------------------------------------------------|
+| TICKTICK_PROJECT_ID        | The default project's ID to add new tasks too. By default: `inbox`.                                                 |
+| TICKTICK_DEFAULT_REMINDER  | The default reminder for a new task. Format: standard iCalendar duration notation. By default: `On the day (09:00)` |
+
+### OAuth
+
 Credentials are stored in your Google **User Properties** (not in code).
 Set them once by updating the `Setup.js` script and running this function once from the Apps Script editor:
 
 ```javascript
-setUserProperties()
+setOAuthProperties()
 ```
 
 ## Set up the OAuth flow
@@ -100,7 +116,7 @@ clasp pull
 # clasp push fires automatically via the Husky pre-push hook
 git add .
 git commit -m "feat: your change"
-git push   # triggers clasp push → syncs to Apps Script
+git push   # triggers `clasp push --force` → syncs to Apps Script
 ```
 
 > **Note:** clasp converts `.gs` ↔ `.js` between Apps Script and local. GitHub stores `.js` files; script.google.com shows `.gs` files. This is expected behaviour.
