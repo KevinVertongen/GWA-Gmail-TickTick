@@ -129,11 +129,11 @@ function onGmailMessageOpen(e) {
   const message = GmailApp.getMessageById(messageId);
   const subject = message.getSubject() || '(no subject)';
   const sender  = message.getFrom();
-  const date    = message.getDate();
+  const emailDate    = message.getDate();
   const bodyPlain  = message.getPlainBody().substring(0, 1000).trim();
   const messageUrl = `https://mail.google.com/mail/u/0/#all/${messageId}`;
 
-  return buildTaskCard(subject, sender, date, messageId, bodyPlain, messageUrl);
+  return buildTaskCard(subject, sender, emailDate, messageId, bodyPlain, messageUrl);
 }
 
 // ─── Card builders ────────────────────────────────────────────────────────────
@@ -141,7 +141,7 @@ function onGmailMessageOpen(e) {
 /**
  * Builds the main sidebar card showing email info + action button.
  */
-function buildTaskCard(subject, sender, date, messageId, bodyPlain, messageUrl) {
+function buildTaskCard(subject, sender, emailDate, messageId, bodyPlain, messageUrl) {
   const defaultContent =
       `From: ${sender}\n` +
       `Link: ${messageUrl}\n\n` +
@@ -180,11 +180,13 @@ function buildTaskCard(subject, sender, date, messageId, bodyPlain, messageUrl) 
   inputSection.addWidget(projectSelector);
 
   // ── Due date ──────────────────────────────────────────────────
-  const emailDate   = new Date(date);
+  const dueDate   = new Date();
+  dueDate.setDate(dueDate.getDate() + 1); // Set due date to 'tomorrow'
+
   const datePicker  = CardService.newDatePicker()
       .setFieldName('dueDate')
       .setTitle('Due date')
-      .setValueInMsSinceEpoch(emailDate.getTime());
+      .setValueInMsSinceEpoch(dueDate.getTime());
 
   inputSection.addWidget(datePicker);
 
@@ -205,7 +207,6 @@ function buildTaskCard(subject, sender, date, messageId, bodyPlain, messageUrl) 
       .addWidget(
           CardService.newTextButton()
               .setText('➕ Create TickTick Task')
-              .setTextButtonStyle(CardService.TextButtonStyle.FILLED)
               .setOnClickAction(
                   CardService.newAction()
                       .setFunctionName('createTickTickTask')
@@ -259,7 +260,7 @@ function createTickTickTask(e) {
   const priority  = parseInt(e.formInput.priority, 10);
 
   // DatePicker returns { msSinceEpoch: '...' }
-  const dueDateMs   = e.formInput.dueDate?.msSinceEpoch;
+  const dueDateMs   = e.formInput.dueDate?.dateInput?.msSinceEpoch;
   const dueDate     = dueDateMs
       ? new Date(parseInt(dueDateMs, 10)).toISOString().split('T')[0]  // 'YYYY-MM-DD'
       : null;
