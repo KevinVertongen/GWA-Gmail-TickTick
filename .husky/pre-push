@@ -1,1 +1,1 @@
-npx clasp push || { echo "❌ clasp push failed — aborting push."; exit 1; }
+npx clasp push --force || { echo "❌ clasp push failed — aborting push."; exit 1; }
