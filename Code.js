@@ -130,8 +130,10 @@ function onGmailMessageOpen(e) {
   const subject = message.getSubject() || '(no subject)';
   const sender  = message.getFrom();
   const date    = message.getDate().toLocaleDateString();
+  const bodyPlain  = message.getPlainBody().substring(0, 1000).trim();
+  const messageUrl = `https://mail.google.com/mail/u/0/#all/${messageId}`;
 
-  return buildTaskCard(subject, sender, date, messageId);
+  return buildTaskCard(subject, sender, date, messageId, bodyPlain, messageUrl);
 }
 
 // ─── Card builders ────────────────────────────────────────────────────────────
@@ -139,7 +141,11 @@ function onGmailMessageOpen(e) {
 /**
  * Builds the main sidebar card showing email info + action button.
  */
-function buildTaskCard(subject, sender, date, messageId) {
+function buildTaskCard(subject, sender, date, messageId, bodyPlain, messageUrl) {
+  const defaultContent =
+      `From: ${sender}\n` +
+      `Link: ${messageUrl}\n\n` +
+      `---\n${bodyPlain}`;
 
   // ── Editable fields ───────────────────────────────────────────
   const inputSection = CardService.newCardSection()
@@ -154,7 +160,7 @@ function buildTaskCard(subject, sender, date, messageId) {
           CardService.newTextInput()
               .setFieldName('taskContent')
               .setTitle('Notes')
-              .setValue(`From: ${sender}`)
+              .setValue(defaultContent)
               .setMultiline(true)
       );
 
