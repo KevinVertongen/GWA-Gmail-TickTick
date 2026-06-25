@@ -4,7 +4,7 @@
   "runtimeVersion": "V8",
   "urlFetchWhitelist": [
     "https://ticktick.com/oauth/token",
-    "https://ticktick.com/open/v1/task"
+    "https://ticktick.com/open/v1/"
   ],
   "oauthScopes": [
     "https://www.googleapis.com/auth/gmail.addons.execute",
