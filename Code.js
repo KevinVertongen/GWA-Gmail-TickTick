@@ -130,10 +130,11 @@ function onGmailMessageOpen(e) {
   const subject = message.getSubject() || '(no subject)';
   const sender  = message.getFrom();
   const emailDate    = message.getDate();
-  const bodyPlain  = message.getPlainBody().substring(0, 1000).trim();
+  const timeZone = e.commonEventObject.timeZone;  // The user's timezone ID and offset
   const messageUrl = `https://mail.google.com/mail/u/0/#all/${messageId}`;
+  const bodyPlain  = message.getPlainBody().substring(0, 1000).trim();
 
-  return buildTaskCard(subject, sender, emailDate, messageId, bodyPlain, messageUrl);
+  return buildTaskCard(messageId, subject, sender, emailDate, timeZone, messageUrl, bodyPlain);
 }
 
 // ─── Card builders ────────────────────────────────────────────────────────────
@@ -141,7 +142,7 @@ function onGmailMessageOpen(e) {
 /**
  * Builds the main sidebar card showing email info + action button.
  */
-function buildTaskCard(subject, sender, emailDate, messageId, bodyPlain, messageUrl) {
+function buildTaskCard(messageId, subject, sender, emailDate, timeZone, messageUrl, bodyPlain) {
   const defaultContent =
       `From: ${sender}\n` +
       `Link: ${messageUrl}\n\n` +
@@ -210,7 +211,10 @@ function buildTaskCard(subject, sender, emailDate, messageId, bodyPlain, message
               .setOnClickAction(
                   CardService.newAction()
                       .setFunctionName('createTickTickTask')
-                      .setParameters({ messageId })  // only pass what isn't in formInput
+                      .setParameters({
+                        messageId : messageId,
+                        timeZone  : JSON.stringify(timeZone)
+                      })
               )
       );
 
@@ -259,21 +263,28 @@ function createTickTickTask(e) {
   const projectId = e.formInput.projectId;   // empty string = Inbox
   const priority  = parseInt(e.formInput.priority, 10);
 
-  // DatePicker returns { msSinceEpoch: '...' }
-  const dueDateMs   = e.formInput.dueDate?.dateInput?.msSinceEpoch;
+  // TickTick requires the user's time zone
+  const timeZone = JSON.parse(e.parameters.timeZone);
+  const timeZoneId = timeZone.id;
+  const timezoneOffset = timeZone.offset;
+
+  // DatePicker
+  const dueDateMs   = e.formInput.dueDate?.msSinceEpoch;
   const dueDate     = dueDateMs
-      ? new Date(parseInt(dueDateMs, 10)).toISOString().split('T')[0]  // 'YYYY-MM-DD'
+      ? formatDueDate(dueDateMs, parseInt(timezoneOffset, 10)) // a full ISO 8601 timestamp
       : null;
 
   const task = {
-    title,
-    content,
-    priority,
-    isAllDay: false
+    title:    title,
+    content:  content,
+    priority: priority,
+    isAllDay: true,
+    timeZone: timeZoneId
   };
 
   if (projectId) task.projectId = projectId;
   if (dueDate)   task.dueDate   = dueDate;
+  console.log('Task payload:', JSON.stringify(task));
 
   try {
     const response = UrlFetchApp.fetch(`${TICKTICK_API_BASE}/task`, {
@@ -302,6 +313,14 @@ function createTickTickTask(e) {
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
+function notifyUser(message) {
+  return CardService.newActionResponseBuilder()
+      .setNotification(
+          CardService.newNotification().setText(message)
+      )
+      .build();
+}
+
 function getTickTickProjects() {
   const accessToken = getAccessToken();
   if (!accessToken) return [];
@@ -319,12 +338,19 @@ function getTickTickProjects() {
   return JSON.parse(response.getContentText());
 }
 
-function notifyUser(message) {
-  return CardService.newActionResponseBuilder()
-    .setNotification(
-      CardService.newNotification().setText(message)
-    )
-    .build();
+function formatDueDate(msSinceEpoch, timezoneOffsetMs) {
+  const date = new Date(parseInt(msSinceEpoch, 10));
+
+  // Convert offset from ms to ±HH:mm string
+  const totalMinutes = timezoneOffsetMs / 60000;
+  const sign         = totalMinutes >= 0 ? '+' : '-';
+  const absMinutes   = Math.abs(totalMinutes);
+  const hours        = String(Math.floor(absMinutes / 60)).padStart(2, '0');
+  const minutes      = String(absMinutes % 60).padStart(2, '0');
+  const offsetString = `${sign}${hours}${minutes}`;  // e.g. "+0200"
+
+  // Format as yyyy-MM-ddTHH:mm:ss±HHmm
+  return date.toISOString().replace('.000Z', offsetString);
 }
 
 function getUserProperty(key) {

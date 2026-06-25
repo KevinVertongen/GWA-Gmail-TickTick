@@ -7,6 +7,7 @@
     "https://ticktick.com/open/v1/"
   ],
   "oauthScopes": [
+    "https://www.googleapis.com/auth/script.locale",
     "https://www.googleapis.com/auth/gmail.addons.execute",
     "https://www.googleapis.com/auth/gmail.addons.current.message.readonly",
     "https://www.googleapis.com/auth/gmail.readonly",
@@ -17,6 +18,7 @@
     "common": {
       "name": "Send to TickTick",
       "logoUrl": "https://www.gstatic.com/images/icons/material/system/1x/check_circle_black_48dp.png",
+      "useLocaleFromApp": true,
       "homepageTrigger": {
         "runFunction": "onHomepage"
       }
