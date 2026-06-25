@@ -140,47 +140,83 @@ function onGmailMessageOpen(e) {
  * Builds the main sidebar card showing email info + action button.
  */
 function buildTaskCard(subject, sender, date, messageId) {
-  const infoSection = CardService.newCardSection()
-    .setHeader('Email details')
-    .addWidget(
-      CardService.newKeyValue()
-        .setTopLabel('Subject')
-        .setContent(subject)
-    )
-    .addWidget(
-      CardService.newKeyValue()
-        .setTopLabel('From')
-        .setContent(sender)
-    )
-    .addWidget(
-      CardService.newKeyValue()
-        .setTopLabel('Date')
-        .setContent(date)
-    );
 
+  // ── Editable fields ───────────────────────────────────────────
+  const inputSection = CardService.newCardSection()
+      .setHeader('Task details')
+      .addWidget(
+          CardService.newTextInput()
+              .setFieldName('taskTitle')
+              .setTitle('Title')
+              .setValue(subject)
+      )
+      .addWidget(
+          CardService.newTextInput()
+              .setFieldName('taskContent')
+              .setTitle('Notes')
+              .setValue(`From: ${sender}`)
+              .setMultiline(true)
+      );
+
+  // ── Project dropdown ──────────────────────────────────────────
+  const projectSelector = CardService.newSelectionInput()
+      .setType(CardService.SelectionInputType.DROPDOWN)
+      .setFieldName('projectId')
+      .setTitle('Project');
+
+  projectSelector.addItem('📥 Inbox', '', true); // default
+
+  const projects = getTickTickProjects();
+  projects.forEach(p => {
+    projectSelector.addItem(p.name, p.id, false);
+  });
+
+  inputSection.addWidget(projectSelector);
+
+  // ── Due date ──────────────────────────────────────────────────
+  const emailDate   = new Date(date);
+  const datePicker  = CardService.newDatePicker()
+      .setFieldName('dueDate')
+      .setTitle('Due date')
+      .setValueInMsSinceEpoch(emailDate.getTime());
+
+  inputSection.addWidget(datePicker);
+
+  // ── Priority ──────────────────────────────────────────────────
+  const prioritySelector = CardService.newSelectionInput()
+      .setType(CardService.SelectionInputType.DROPDOWN)
+      .setFieldName('priority')
+      .setTitle('Priority')
+      .addItem('None',   '0', true)
+      .addItem('Low',    '1', false)
+      .addItem('Medium', '3', false)
+      .addItem('High',   '5', false);
+
+  inputSection.addWidget(prioritySelector);
+
+  // ── Action button ─────────────────────────────────────────────
   const actionSection = CardService.newCardSection()
-    .addWidget(
-      CardService.newTextButton()
-        .setText('➕ Create TickTick Task')
-        .setTextButtonStyle(CardService.TextButtonStyle.FILLED)
-        .setBackgroundColor('#4772FA')  // TickTick blue
-        .setOnClickAction(
-          CardService.newAction()
-            .setFunctionName('createTickTickTask')
-            .setParameters({ subject, sender, messageId })
-        )
-    );
+      .addWidget(
+          CardService.newTextButton()
+              .setText('➕ Create TickTick Task')
+              .setTextButtonStyle(CardService.TextButtonStyle.FILLED)
+              .setOnClickAction(
+                  CardService.newAction()
+                      .setFunctionName('createTickTickTask')
+                      .setParameters({ messageId })  // only pass what isn't in formInput
+              )
+      );
 
   return CardService.newCardBuilder()
-    .setHeader(
-      CardService.newCardHeader()
-        .setTitle('Send to TickTick')
-        .setSubtitle('Create a task from this email')
-        .setImageUrl('https://www.gstatic.com/images/icons/material/system/1x/check_circle_black_48dp.png')
-    )
-    .addSection(infoSection)
-    .addSection(actionSection)
-    .build();
+      .setHeader(
+          CardService.newCardHeader()
+              .setTitle('Send to TickTick')
+              .setSubtitle('Create a task from this email')
+              .setImageUrl('https://www.gstatic.com/images/icons/material/system/1x/check_circle_black_48dp.png')
+      )
+      .addSection(inputSection)
+      .addSection(actionSection)
+      .build();
 }
 
 /**
@@ -205,22 +241,32 @@ function buildConfigCard(message) {
  * @returns {ActionResponse}
  */
 function createTickTickTask(e) {
-  const projectId = getUserProperty(PROP_KEY_PROJECT); // When null, defaults to 'inbox'.
-  const subject   = e.parameters.subject;
-  const sender    = e.parameters.sender;
-
   const accessToken = getAccessToken()
   if (!accessToken) {
     return notifyUser('⚠️ You are not logged in to TickTick. Please login and try again.');
   }
 
-  // Build the TickTick task payload
+  // Read form inputs — these come from e.formInput, not e.parameters
+  const title     = e.formInput.taskTitle;
+  const content   = e.formInput.taskContent;
+  const projectId = e.formInput.projectId;   // empty string = Inbox
+  const priority  = parseInt(e.formInput.priority, 10);
+
+  // DatePicker returns { msSinceEpoch: '...' }
+  const dueDateMs   = e.formInput.dueDate?.msSinceEpoch;
+  const dueDate     = dueDateMs
+      ? new Date(parseInt(dueDateMs, 10)).toISOString().split('T')[0]  // 'YYYY-MM-DD'
+      : null;
+
   const task = {
-    title:   subject,
-    content: `From: ${sender}`,  // body of task note
-    priority: 0                  // 0=none 1=low 3=medium 5=high
+    title,
+    content,
+    priority,
+    isAllDay: false
   };
+
   if (projectId) task.projectId = projectId;
+  if (dueDate)   task.dueDate   = dueDate;
 
   try {
     const response = UrlFetchApp.fetch(`${TICKTICK_API_BASE}/task`, {
@@ -237,8 +283,7 @@ function createTickTickTask(e) {
     if (status === 200 || status === 201) {
       return notifyUser('✅ Task created in TickTick!');
     } else {
-      const body = response.getContentText();
-      Logger.log('TickTick error: ' + status + ' ' + body);
+      Logger.log('TickTick error: ' + status + ' ' + response.getContentText());
       return notifyUser(`❌ Failed (HTTP ${status}). Check logs.`);
     }
 
@@ -249,6 +294,23 @@ function createTickTickTask(e) {
 }
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
+
+function getTickTickProjects() {
+  const accessToken = getAccessToken();
+  if (!accessToken) return [];
+
+  const response = UrlFetchApp.fetch(`${TICKTICK_API_BASE}/project`, {
+    method: 'get',
+    headers: {
+      'Authorization': `Bearer ${accessToken}`
+    },
+    muteHttpExceptions: true
+  });
+
+  if (response.getResponseCode() !== 200) return [];
+
+  return JSON.parse(response.getContentText());
+}
 
 function notifyUser(message) {
   return CardService.newActionResponseBuilder()
