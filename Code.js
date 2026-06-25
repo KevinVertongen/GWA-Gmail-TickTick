@@ -149,6 +149,14 @@ function onGmailMessageOpen(e) {
  * Builds the main sidebar card showing email info + action button.
  */
 function buildTaskCard(messageId, subject, sender, emailDate, timeZone, messageUrl, bodyPlain) {
+
+  // ── If a task was already created, show its link ───────────────
+  const existingTaskId = getTaskIdProperty(`messageId`);
+  if (existingTaskId) {
+    return buildTaskLinkCard(existingTaskId);
+  }
+
+  // ── No existing task found, show new task form ─────────────────
   const defaultContent =
       `From: ${sender}\n` +
       `Link: ${messageUrl}\n` +
@@ -236,6 +244,31 @@ function buildTaskCard(messageId, subject, sender, emailDate, timeZone, messageU
 }
 
 /**
+ * Message already has a task, show link to that task.
+ * @param {String} taskId - The existing task ID.
+ * @returns {Card}
+ */
+function buildTaskLinkCard(taskId) {
+  const taskUrl = `${TICKTICK_TASK_URL}/tasks/${taskId}`;
+
+  return CardService.newCardBuilder()
+      .setHeader(CardService.newCardHeader()
+          .setTitle(GWA_CARD_TITLE)
+          .setSubtitle('Task already created')
+          .setImageUrl(GWA_CARD_ICON)
+      )
+      .addSection(
+          CardService.newCardSection()
+              .addWidget(CardService.newTextParagraph()
+                  .setText('✅ A TickTick task already exists for this email.'))
+              .addWidget(CardService.newTextButton()
+                  .setText('Open in TickTick')
+                  .setOpenLink(CardService.newOpenLink().setUrl(taskUrl)))
+      )
+      .build();
+}
+
+/**
  * Fallback / config card.
  */
 function buildConfigCard(subtitle, message) {
@@ -296,7 +329,7 @@ function createTickTickTask(e) {
 
   if (projectId) task.projectId = projectId;
   if (dueDate)   task.dueDate   = dueDate;
-  console.log('Task payload:', JSON.stringify(task));
+  // console.log('Task payload:', JSON.stringify(task));
 
   try {
     const response = UrlFetchApp.fetch(`${TICKTICK_API_BASE}/task`, {
@@ -311,6 +344,10 @@ function createTickTickTask(e) {
 
     const status = response.getResponseCode();
     if (status === 200 || status === 201) {
+      // Store messageId → taskId mapping
+      PropertiesService.getUserProperties()
+          .setProperty(PROP_PREFIX_TASK + messageId, createdTask.id);
+
       return notifyUser('✅ Task created in TickTick!');
     } else {
       Logger.log('TickTick error: ' + status + ' ' + response.getContentText());
@@ -367,4 +404,8 @@ function formatDueDate(msSinceEpoch, timezoneOffsetMs) {
 
 function getUserProperty(key) {
   return PropertiesService.getUserProperties().getProperty(key);
+}
+
+function getTaskIdProperty(messageId) {
+  return PropertiesService.getUserProperties().getProperty(PROP_PREFIX_TASK + messageId);
 }
