@@ -3,6 +3,7 @@
 
 # Except specific Apps Script files
 !appsscript.json
+!Batch.js
 !Code.js
 !Setup.js
 !Tests.js
