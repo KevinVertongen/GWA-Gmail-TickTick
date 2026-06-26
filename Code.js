@@ -117,7 +117,7 @@ function getCredentials() {
  * Renders a fallback homepage card when no email is open.
  */
 function onHomepage() {
-  return buildConfigCard('No message selected', 'Open an email to create a TickTick task from it.');
+  return buildConfigCard('No message selected', 'Open an email to create or view its task.');
 }
 
 /**
@@ -234,8 +234,7 @@ function buildTaskCard(messageId, subject, sender, emailDate, timeZone, messageU
 
   return CardService.newCardBuilder()
       .setHeader(CardService.newCardHeader()
-              .setTitle(GWA_CARD_TITLE)
-              .setSubtitle('Create a task from this email')
+              .setTitle('New task')
               .setImageUrl(GWA_CARD_ICON)
       )
       .addSection(inputSection)
@@ -253,8 +252,7 @@ function buildTaskLinkCard(taskId) {
 
   return CardService.newCardBuilder()
       .setHeader(CardService.newCardHeader()
-          .setTitle(GWA_CARD_TITLE)
-          .setSubtitle('Task already created')
+          .setTitle('Task details')
           .setImageUrl(GWA_CARD_ICON)
       )
       .addSection(
@@ -271,11 +269,10 @@ function buildTaskLinkCard(taskId) {
 /**
  * Fallback / config card.
  */
-function buildConfigCard(subtitle, message) {
+function buildConfigCard(title, message) {
   return CardService.newCardBuilder()
     .setHeader(CardService.newCardHeader()
-        .setTitle(GWA_CARD_TITLE)
-        .setSubtitle(subtitle)
+        .setTitle(title)
         .setImageUrl(GWA_CARD_ICON)
     )
     .addSection(
