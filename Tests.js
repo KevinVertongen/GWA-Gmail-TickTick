@@ -34,3 +34,16 @@ function testCreateTask() {
   Logger.log('Status: ' + response.getResponseCode());
   Logger.log('Response: ' + response.getContentText());
 }
+
+/**
+ * List pairs of messageId -> taskId
+ */
+function listMessageIdTaskIdProperties() {
+  const propertiesService = PropertiesService.getUserProperties();
+  const properties = propertiesService.getProperties();
+
+  for (const key in properties) {
+    const taskId = properties[key];
+    Logger.log('MessageId: ' + key + ' TaskId: ' + taskId);
+  }
+}
