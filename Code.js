@@ -80,7 +80,7 @@ function getAccessToken() {
   const service = getTickTickService_();
 
   if (!service.hasAccess()) {
-    Logger.log('⚠️ Not connected — execute startTickTickOAuth() before continuing.');
+    console.warn('⚠️ Not connected — execute startTickTickOAuth() before continuing.');
     return null;
   }
 
@@ -89,19 +89,30 @@ function getAccessToken() {
 
 // ─── OAuth2 helpers ────────────────────────────────────────────────────────────
 
+/**
+ * Get the client ID for the current user
+ * @returns {String}
+ */
 function getClientId() {
   const clientId = getUserProperty(PROP_KEY_CLIENT_ID);
-  if (!clientId) Logger.log('⚠️ TickTick client ID not set.');
+  if (!clientId) console.warn('⚠️ TickTick client ID not set.');
   return clientId
 }
 
+/**
+ * Get the client secret for the current user
+ * @returns {String}
+ */
 function getClientSecret() {
   const clientSecret = getUserProperty(PROP_KEY_CLIENT_SECRET);
-  if (!clientSecret) Logger.log('⚠️ TickTick client secret not set.');
+  if (!clientSecret) console.warn('⚠️ TickTick client secret not set.');
   return clientSecret
 }
 
-// Base64 encoded client ID and client secret.
+/**
+ * Base64 encoded client ID and client secret.
+ * @returns {String}
+ */
 function getCredentials() {
   const clientId = getClientId()
   const clientSecret = getClientSecret()
@@ -147,11 +158,12 @@ function onGmailMessageOpen(e) {
 
 /**
  * Builds the main sidebar card showing email info + action button.
+ * @returns {Card}
  */
 function buildTaskCard(messageId, subject, sender, emailDate, timeZone, messageUrl, bodyPlain) {
 
   // ── If a task was already created, show its link ───────────────
-  const existingTaskId = getTaskIdProperty(`messageId`);
+  const existingTaskId = getTaskIdProperty(messageId);
   if (existingTaskId) {
     return buildTaskLinkCard(existingTaskId);
   }
@@ -339,21 +351,39 @@ function createTickTickTask(e) {
       muteHttpExceptions: true
     });
 
-    const status = response.getResponseCode();
-    if (status === 200 || status === 201) {
-      // Store messageId → taskId mapping
-      PropertiesService.getUserProperties()
-          .setProperty(PROP_PREFIX_TASK + messageId, createdTask.id);
-
-      return notifyUser('✅ Task created in TickTick!');
-    } else {
-      Logger.log('TickTick error: ' + status + ' ' + response.getContentText());
-      return notifyUser(`❌ Failed (HTTP ${status}). Check logs.`);
-    }
+    return handleTaskCreated(e.parameters.messageId, response);
 
   } catch (err) {
-    Logger.log('Fetch error: ' + err);
+    console.error('Fetch error: ' + err);
     return notifyUser('❌ Network error. Check logs.');
+  }
+}
+
+/**
+ * Process the response returned from creating a new ticktick task.
+ * On success: create a messageId -> taskId mapping. Else: log the error and notify the user.
+ * @param {String} messageId - ID of the message related to the created task.
+ * @param {Object} taskCreatedResponse - response content returned from creating the task.
+ * @returns {ActionResponse}
+ */
+function handleTaskCreated(messageId, taskCreatedResponse) {
+  const status = taskCreatedResponse.getResponseCode();
+  const content =  taskCreatedResponse.getContentText();
+
+  if (status === 200 || status === 201) {
+    const createdTask = JSON.parse(content);
+
+    if (createdTask?.id) {
+      setTaskIdProperty(messageId, createdTask.id);
+    } else {
+      console.error('No task ID retrieved from TickTick. Response: ', status, ', ', content);
+      return notifyUser(`❌ Failed (HTTP ${status}). Check logs.`);
+    }
+    return notifyUser('✅ Task created in TickTick!');
+
+  } else {
+    console.error('TickTick error: ', status, ', ', content);
+    return notifyUser(`❌ Failed (HTTP ${status}). Check logs.`);
   }
 }
 
@@ -403,6 +433,21 @@ function getUserProperty(key) {
   return PropertiesService.getUserProperties().getProperty(key);
 }
 
+/**
+ * Find the linked ticktick task ID for the given message ID.
+ * @param messageId- ID of the message
+ * @returns {String}
+ */
 function getTaskIdProperty(messageId) {
   return PropertiesService.getUserProperties().getProperty(PROP_PREFIX_TASK + messageId);
+}
+
+/**
+ * Store messageId → taskId mapping
+ * @param messageId {String} - ID of the message
+ * @param taskId {String} -ID of the task
+*/
+function setTaskIdProperty(messageId, taskId) {
+  PropertiesService.getUserProperties()
+      .setProperty(PROP_PREFIX_TASK + messageId, taskId);
 }

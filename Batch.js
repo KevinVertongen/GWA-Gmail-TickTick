@@ -6,7 +6,8 @@ function cleanupCompletedTickTickTasks() {
 
     const accessToken = getAccessToken()
     if (!accessToken) {
-        return notifyUser('⚠️ You are not logged in to TickTick. Please login and try again.');
+        console.log('⚠️ You are not logged in to TickTick. Please login and try again.');
+        return;
     }
 
     let removed = 0;
