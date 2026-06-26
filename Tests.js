@@ -43,6 +43,8 @@ function listMessageIdTaskIdProperties() {
   const properties = propertiesService.getProperties();
 
   for (const key in properties) {
+    if (!key.startsWith(PROP_PREFIX_TASK)) continue;
+
     const taskId = properties[key];
     Logger.log('MessageId: ' + key + ' TaskId: ' + taskId);
   }
