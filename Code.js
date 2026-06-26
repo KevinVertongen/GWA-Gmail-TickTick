@@ -435,7 +435,7 @@ function getUserProperty(key) {
 
 /**
  * Find the linked ticktick task ID for the given message ID.
- * @param messageId- ID of the message
+ * @param messageId - ID of the message
  * @returns {String}
  */
 function getTaskIdProperty(messageId) {
