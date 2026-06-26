@@ -36,7 +36,7 @@ function testCreateTask() {
 }
 
 /**
- * List pairs of messageId -> taskId
+ * List mapping of messageId → `{ taskId, projectId }`
  */
 function listMessageIdTaskIdProperties() {
   const propertiesService = PropertiesService.getUserProperties();
@@ -48,4 +48,19 @@ function listMessageIdTaskIdProperties() {
     const taskId = properties[key];
     Logger.log('MessageId: ' + key + ' TaskId: ' + taskId);
   }
+}
+
+/**
+ * Purge all mappings of messageId → `{ taskId, projectId }`
+ */
+function clearTaskProperties() {
+  const propertiesService = PropertiesService.getUserProperties();
+  const properties = propertiesService.getProperties();
+
+  for (const key in properties) {
+    if (key.startsWith(PROP_PREFIX_TASK)) {
+      propertiesService.deleteProperty(key);
+    }
+  }
+  console.log(`All ${PROP_PREFIX_TASK} properties cleared.`);
 }

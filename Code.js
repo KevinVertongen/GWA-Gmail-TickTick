@@ -3,7 +3,7 @@
 const TICKTICK_API_BASE       = 'https://ticktick.com/open/v1';
 const TICKTICK_AUTH_URL       = 'https://ticktick.com/oauth/authorize';
 const TICKTICK_TOKEN_URL      = 'https://ticktick.com/oauth/token';
-const TICKTICK_TASK_URL       = 'https://ticktick.com/webapp/#p/inbox/tasks';
+const TICKTICK_WEBAPP_URL     = 'https://ticktick.com/webapp';
 
 const PROP_KEY_CLIENT_ID      = 'TICKTICK_CLIENT_ID';
 const PROP_KEY_CLIENT_SECRET  = 'TICKTICK_CLIENT_SECRET';
@@ -163,9 +163,9 @@ function onGmailMessageOpen(e) {
 function buildTaskCard(messageId, subject, sender, emailDate, timeZone, messageUrl, bodyPlain) {
 
   // ── If a task was already created, show its link ───────────────
-  const existingTaskId = getTaskIdProperty(messageId);
-  if (existingTaskId) {
-    return buildTaskLinkCard(existingTaskId);
+  const existingTask = getTaskIdProperty(messageId);
+  if (existingTask) {
+    return buildTaskLinkCard(existingTask.taskId, existingTask.projectId);
   }
 
   // ── No existing task found, show new task form ─────────────────
@@ -257,10 +257,11 @@ function buildTaskCard(messageId, subject, sender, emailDate, timeZone, messageU
 /**
  * Message already has a task, show link to that task.
  * @param {String} taskId - The existing task ID.
+ * @param {String} projectId - The existing task's project ID.
  * @returns {Card}
  */
-function buildTaskLinkCard(taskId) {
-  const taskUrl = `${TICKTICK_TASK_URL}/tasks/${taskId}`;
+function buildTaskLinkCard(taskId, projectId) {
+  const taskUrl = `${TICKTICK_WEBAPP_URL}/#p/${projectId}/tasks/${taskId}`;
 
   return CardService.newCardBuilder()
       .setHeader(CardService.newCardHeader()
@@ -361,7 +362,7 @@ function createTickTickTask(e) {
 
 /**
  * Process the response returned from creating a new ticktick task.
- * On success: create a messageId -> taskId mapping. Else: log the error and notify the user.
+ * On success: create a messageId → `{ taskId, projectId }` mapping. Else: log the error and notify the user.
  * @param {String} messageId - ID of the message related to the created task.
  * @param {Object} taskCreatedResponse - response content returned from creating the task.
  * @returns {ActionResponse}
@@ -374,7 +375,7 @@ function handleTaskCreated(messageId, taskCreatedResponse) {
     const createdTask = JSON.parse(content);
 
     if (createdTask?.id) {
-      setTaskIdProperty(messageId, createdTask.id);
+      setTaskIdProperty(messageId, createdTask.id, createdTask.projectId);
     } else {
       console.error('No task ID retrieved from TickTick. Response: ', status, ', ', content);
       return notifyUser(`❌ Failed (HTTP ${status}). Check logs.`);
@@ -434,20 +435,22 @@ function getUserProperty(key) {
 }
 
 /**
- * Find the linked ticktick task ID for the given message ID.
+ * Find the linked ticktick task ID and project ID for the given message ID.
  * @param messageId - ID of the message
- * @returns {String}
+ * @returns {JSON} - `{ taskId, projectId }`
  */
 function getTaskIdProperty(messageId) {
-  return PropertiesService.getUserProperties().getProperty(PROP_PREFIX_TASK + messageId);
+  const value = getUserProperty(PROP_PREFIX_TASK + messageId);
+  return value ? JSON.parse(value) : null;
 }
 
 /**
- * Store messageId → taskId mapping
+ * Store messageId → `{ taskId, projectId }` mapping
  * @param messageId {String} - ID of the message
  * @param taskId {String} -ID of the task
+ * @param projectId {String} - ID of the task's project
 */
-function setTaskIdProperty(messageId, taskId) {
+function setTaskIdProperty(messageId, taskId, projectId) {
   PropertiesService.getUserProperties()
-      .setProperty(PROP_PREFIX_TASK + messageId, taskId);
+      .setProperty(PROP_PREFIX_TASK + messageId, JSON.stringify({ taskId, projectId }));
 }
