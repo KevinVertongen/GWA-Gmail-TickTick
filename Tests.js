@@ -36,6 +36,16 @@ function testCreateTask() {
 }
 
 /**
+ * List of project IDs and there name
+ */
+function listProjects() {
+    const projects = getTickTickProjects();
+    for (const project of projects) {
+        Logger.log(project.id + ' | ' + project.name);
+    }
+}
+
+/**
  * List mapping of messageId → `{ taskId, projectId }`
  */
 function listMessageIdTaskIdProperties() {

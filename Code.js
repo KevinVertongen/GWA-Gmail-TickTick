@@ -10,7 +10,7 @@ const PROP_KEY_CLIENT_SECRET  = 'TICKTICK_CLIENT_SECRET';
 const PROP_KEY_PROJECT        = 'TICKTICK_PROJECT_ID';
 const PROP_KEY_REMINDER       = 'TICKTICK_DEFAULT_REMINDER';
 const PROP_PREFIX_TASK        = 'task_';
-
+const PROP_PROJECT_INBOX      = 'inbox';
 const GWA_CARD_TITLE          = 'Send to TickTick';
 const GWA_CARD_ICON           = 'https://www.gstatic.com/images/icons/material/system/1x/check_circle_black_48dp.png';
 
@@ -197,11 +197,12 @@ function buildTaskCard(messageId, subject, sender, emailDate, timeZone, messageU
       .setFieldName('projectId')
       .setTitle('Project');
 
-  projectSelector.addItem('📥 Inbox', '', true); // default
+  const defaultProjectId = getUserProperty(PROP_KEY_PROJECT) || PROP_PROJECT_INBOX;
+  projectSelector.addItem('📥 Inbox', PROP_PROJECT_INBOX, defaultProjectId === PROP_PROJECT_INBOX);
 
   const projects = getTickTickProjects();
   projects.forEach(p => {
-    projectSelector.addItem(p.name, p.id, false);
+    projectSelector.addItem(p.name, p.id, p.id === defaultProjectId);
   });
 
   inputSection.addWidget(projectSelector);
@@ -312,7 +313,7 @@ function createTickTickTask(e) {
   // Read form inputs — these come from e.formInput, not e.parameters
   const title     = e.formInput.taskTitle;
   const content   = e.formInput.taskContent;
-  const projectId = e.formInput.projectId;   // empty string = Inbox
+  const projectId = e.formInput.projectId;
   const priority  = parseInt(e.formInput.priority, 10);
 
   // TickTick requires the user's time zone
@@ -337,7 +338,7 @@ function createTickTickTask(e) {
     reminders: [defaultReminder]
   };
 
-  if (projectId) task.projectId = projectId;
+  if (projectId && projectId !== PROP_PROJECT_INBOX) task.projectId = projectId;
   if (dueDate)   task.dueDate   = dueDate;
   // console.log('Task payload:', JSON.stringify(task));
 
