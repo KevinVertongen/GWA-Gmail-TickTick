@@ -377,11 +377,21 @@ function handleTaskCreated(messageId, taskCreatedResponse) {
 
     if (createdTask?.id) {
       setTaskIdProperty(messageId, createdTask.id, createdTask.projectId);
+      // Navigate to the task link card automatically
+      return CardService.newActionResponseBuilder()
+          .setNavigation(
+              CardService.newNavigation()
+                  .pushCard(buildTaskLinkCard(createdTask.id, createdTask.projectId))
+          )
+          .setNotification(
+              CardService.newNotification().setText('✅ Task created in TickTick!')
+          )
+          .setStateChanged(true)
+          .build();
     } else {
       console.error('No task ID retrieved from TickTick. Response: ', status, ', ', content);
       return notifyUser(`❌ Failed (HTTP ${status}). Check logs.`);
     }
-    return notifyUser('✅ Task created in TickTick!');
 
   } else {
     console.error('TickTick error: ', status, ', ', content);
